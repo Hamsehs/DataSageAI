@@ -1,0 +1,42 @@
+import streamlit as st
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+
+# Load the pre-trained model for summarization
+tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
+model = AutoModelForSeq2SeqLM.from_pretrained("facebook/bart-large-cnn")
+
+# Add a title and description
+st.title("Data Description Quality Checker")
+st.write("Upload a text file and write a data description and the program will see if the description match the txt. file.")
+
+# Add a file uploader
+file = st.file_uploader("Upload a text file", type=["txt"])
+
+# Add a text input box for user to enter description
+desc = st.text_input("Enter data description here")
+
+# Generate summary of uploaded file using the pre-trained model
+if file:
+    file_contents = file.read().decode("utf-8")
+    input_ids = tokenizer.encode(file_contents, return_tensors="pt", max_length=1024)
+    summary_ids = model.generate(input_ids, max_length=120, min_length=20, length_penalty=2.0)
+    file_summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+    st.write("File summary:")
+    st.write(file_summary)
+
+
+if file and desc:
+    if desc.lower() in file_summary.lower():
+        st.write("The description matches the file.")
+    else:
+        st.write("The description does not match the file..")
+
+# If a file is uploaded, display its content
+if file:
+    st.write("File contents:")
+    st.code(file_contents)
+
+# If a description is entered, display it
+if desc:
+    st.write("Data description:")
+    st.write(desc)
